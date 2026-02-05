@@ -1,0 +1,1493 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Pendataan Prestasi Siswa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;family=Open+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <style>
+    body { box-sizing: border-box; }
+    * { font-family: 'Open Sans', sans-serif; }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Montserrat', sans-serif; }
+    
+    .nav-item { transition: all 0.3s ease; }
+    .nav-item:hover { background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(30, 58, 138, 0.1) 100%); }
+    .nav-item.active { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; }
+    
+    .card-stat {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      transition: all 0.3s ease;
+    }
+    .card-stat:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(30, 58, 138, 0.15);
+      border-color: rgba(212, 175, 55, 0.5);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(30, 58, 138, 0.3);
+    }
+    
+    .sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }
+    .gold-accent { color: #d4af37; }
+    .table-row { transition: all 0.2s ease; }
+    .table-row:hover { background-color: rgba(212, 175, 55, 0.05); }
+    
+    .input-field { transition: all 0.3s ease; border: 2px solid #e2e8f0; }
+    .input-field:focus { border-color: #d4af37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1); }
+    
+    /* Loading Overlay */
+    #loading-overlay {
+        backdrop-filter: blur(5px);
+        background: rgba(255, 255, 255, 0.7);
+    }
+    
+    .chart-bar { transition: all 1s ease-out; }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.4s ease forwards; }
+    
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    .animate-slide-in { animation: slideIn 0.3s ease forwards; }
+    
+    .toast {
+      position: fixed; top: 20px; right: 20px; z-index: 100;
+      animation: slideInRight 0.3s ease forwards;
+    }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+    
+    .modal {
+        transition: opacity 0.3s ease;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .modal.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #1e3a8a 0%, #d4af37 100%); border-radius: 4px; }
+    
+    .stat-icon { background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(30, 58, 138, 0.1) 100%); }
+  </style>
+ </head>
+ <body class="h-full bg-slate-50">
+  <div id="app" class="h-full w-full flex flex-col lg:flex-row overflow-hidden relative">
+   
+   <!-- Loading Indicator Global -->
+   <div id="loading-overlay" class="fixed inset-0 z-[100] hidden flex flex-col items-center justify-center">
+       <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+       <p class="text-slate-600 font-medium" id="loading-text">Memproses data...</p>
+   </div>
+
+   <!-- Mobile Header -->
+   <header class="lg:hidden bg-gradient-to-r from-slate-900 to-slate-800 text-white p-4 flex items-center justify-between sticky top-0 z-50 shadow-md">
+    <div class="flex items-center gap-3">
+     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
+      <svg class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+     </div>
+     <div>
+      <h1 class="font-bold text-sm">Prestasi Siswa</h1>
+      <p class="text-xs text-slate-400">SMPN 42 Bandar Lampung</p>
+     </div>
+    </div>
+    <button id="mobile-menu-btn" class="p-2 rounded-lg hover:bg-slate-700 transition-colors">
+     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+    </button>
+   </header>
+
+   <!-- Mobile Navigation Overlay -->
+   <div id="mobile-nav" class="fixed inset-0 z-50 hidden lg:hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="mobile-nav-overlay"></div>
+    <nav class="absolute left-0 top-0 bottom-0 w-72 sidebar text-white p-6 animate-slide-in shadow-2xl">
+     <div class="flex items-center justify-between mb-8">
+      <div class="flex items-center gap-3">
+       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
+        <svg class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+       </div>
+       <span class="font-bold gold-accent">Menu</span>
+      </div>
+      <button id="close-mobile-nav" class="p-2 rounded-lg hover:bg-slate-700">
+       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+     </div>
+     <div class="space-y-2 mobile-menu-items">
+       <!-- Menu items injected via JS -->
+     </div>
+    </nav>
+   </div>
+
+   <!-- Desktop Sidebar -->
+   <aside class="hidden lg:flex sidebar text-white w-72 flex-shrink-0 flex-col shadow-xl z-20">
+    <div class="p-6">
+     <div class="flex items-center gap-4 mb-2">
+      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
+       <svg class="w-7 h-7 text-slate-900" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+      </div>
+      <div>
+       <h1 class="font-bold text-lg gold-accent leading-tight">Prestasi Siswa</h1>
+       <p class="text-xs text-slate-400">SMPN 42 Bandar Lampung</p>
+      </div>
+     </div>
+    </div>
+    <nav class="flex-1 px-4 space-y-2" id="desktop-nav">
+     <button onclick="navigateTo('dashboard')" class="nav-item active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left" data-target="dashboard">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
+      <span class="font-medium">Dashboard</span>
+     </button>
+     
+     <button onclick="navigateTo('list')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white" data-target="list">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+      <span class="font-medium">Daftar Prestasi</span>
+     </button>
+     
+     <button onclick="navigateTo('category')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white" data-target="category">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+      <span class="font-medium">Kategori</span>
+     </button>
+
+     <!-- Full Screen Button (New) -->
+     <button onclick="toggleFullScreen()" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white">
+      <svg class="w-5 h-5 fullscreen-btn-icon" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+      <span class="font-medium fullscreen-btn-text">Layar Penuh</span>
+     </button>
+
+     <!-- Admin Only Menu Group -->
+     <div id="admin-menu-group" class="hidden pt-2 mt-2 border-t border-slate-700">
+         <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Admin Panel</p>
+         <button onclick="navigateTo('input')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white" data-target="input">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+          <span class="font-medium">Input Prestasi</span>
+         </button>
+         <button onclick="openSettingsModal()" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          <span class="font-medium">Pengaturan Database</span>
+         </button>
+     </div>
+    </nav>
+    <div class="p-4 border-t border-slate-700">
+     <button id="btn-profile" onclick="handleProfileClick()" class="w-full bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-4 flex items-center gap-3 hover:bg-slate-600 transition-colors text-left group">
+      <div id="profile-avatar" class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold shadow-lg border border-slate-500 transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+      </div>
+      <div class="flex-1">
+       <p id="profile-name" class="font-medium text-sm">Tamu (Guest)</p>
+       <p id="profile-role" class="text-xs text-slate-400 group-hover:text-yellow-400 transition-colors">Klik untuk Ganti Mode</p>
+      </div>
+      <div class="text-slate-500">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+      </div>
+     </button>
+    </div>
+   </aside>
+
+   <!-- Main Content -->
+   <main class="flex-1 overflow-auto bg-slate-50 relative">
+    
+    <!-- Database Status Indicator (Visible when connected) -->
+    <div id="db-status-bar" class="hidden bg-green-100 text-green-700 px-4 py-2 text-xs font-medium text-center border-b border-green-200">
+        <span class="flex items-center justify-center gap-2">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            Terhubung ke Google Sheets Database
+        </span>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="page-dashboard" class="page p-4 lg:p-8 animate-fade-in">
+     <div class="mb-6 lg:mb-8">
+      <h2 class="text-2xl lg:text-3xl font-bold text-slate-800 mb-2">Selamat Datang</h2>
+      <p class="text-slate-500">Ringkasan data prestasi siswa tahun ini.</p>
+     </div>
+
+     <!-- Stats Cards -->
+     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+      <div class="card-stat rounded-2xl p-4 lg:p-6">
+       <div class="flex items-start justify-between mb-3">
+        <div class="stat-icon w-12 h-12 rounded-xl flex items-center justify-center">
+         <svg class="w-6 h-6 text-blue-900" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+        </div>
+        <span class="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Total</span>
+       </div>
+       <p id="stat-total" class="text-2xl lg:text-3xl font-bold text-slate-800">0</p>
+       <p class="text-sm text-slate-500 mt-1">Prestasi Tercatat</p>
+      </div>
+
+      <div class="card-stat rounded-2xl p-4 lg:p-6">
+       <div class="flex items-start justify-between mb-3">
+        <div class="stat-icon w-12 h-12 rounded-xl flex items-center justify-center">
+         <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+        </div>
+        <span class="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">Akademik</span>
+       </div>
+       <p id="stat-akademik" class="text-2xl lg:text-3xl font-bold text-slate-800">0</p>
+       <p class="text-sm text-slate-500 mt-1">Prestasi</p>
+      </div>
+
+      <div class="card-stat rounded-2xl p-4 lg:p-6">
+       <div class="flex items-start justify-between mb-3">
+        <div class="stat-icon w-12 h-12 rounded-xl flex items-center justify-center">
+         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
+        </div>
+        <span class="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">Olahraga</span>
+       </div>
+       <p id="stat-olahraga" class="text-2xl lg:text-3xl font-bold text-slate-800">0</p>
+       <p class="text-sm text-slate-500 mt-1">Prestasi</p>
+      </div>
+
+      <div class="card-stat rounded-2xl p-4 lg:p-6">
+       <div class="flex items-start justify-between mb-3">
+        <div class="stat-icon w-12 h-12 rounded-xl flex items-center justify-center">
+         <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
+        </div>
+        <span class="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">Seni</span>
+       </div>
+       <p id="stat-seni" class="text-2xl lg:text-3xl font-bold text-slate-800">0</p>
+       <p class="text-sm text-slate-500 mt-1">Prestasi</p>
+      </div>
+     </div>
+
+     <!-- Charts Section -->
+     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <!-- Chart by Level -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+       <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 gold-accent" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        Prestasi per Tingkat
+       </h3>
+       <div id="chart-level" class="space-y-4">
+         <!-- Dynamic Chart Bars -->
+       </div>
+      </div>
+
+      <!-- Chart by Category (Cards) -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+       <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 gold-accent" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
+        Distribusi Kategori
+       </h3>
+       <div class="grid grid-cols-2 gap-4">
+        <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-100">
+         <div class="text-3xl mb-2">📚</div>
+         <p id="cat-akademik-card" class="text-2xl font-bold text-blue-700">0</p>
+         <p class="text-xs font-semibold uppercase text-blue-600 tracking-wide">Akademik</p>
+        </div>
+        <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-100">
+         <div class="text-3xl mb-2">⚽</div>
+         <p id="cat-olahraga-card" class="text-2xl font-bold text-green-700">0</p>
+         <p class="text-xs font-semibold uppercase text-green-600 tracking-wide">Olahraga</p>
+        </div>
+        <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-100">
+         <div class="text-3xl mb-2">🎨</div>
+         <p id="cat-seni-card" class="text-2xl font-bold text-purple-700">0</p>
+         <p class="text-xs font-semibold uppercase text-purple-600 tracking-wide">Seni</p>
+        </div>
+        <div class="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border border-yellow-100">
+         <div class="text-3xl mb-2">🏆</div>
+         <p id="cat-lainnya-card" class="text-2xl font-bold text-yellow-700">0</p>
+         <p class="text-xs font-semibold uppercase text-yellow-600 tracking-wide">Lainnya</p>
+        </div>
+       </div>
+      </div>
+     </div>
+
+     <!-- Recent Achievements -->
+     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+      <div class="flex items-center justify-between mb-4">
+       <h3 class="font-bold text-slate-800 flex items-center gap-2">
+        <svg class="w-5 h-5 gold-accent" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        Prestasi Terbaru
+       </h3>
+       <button onclick="navigateTo('list')" class="text-sm text-blue-600 hover:text-blue-700 font-medium">Lihat Semua →</button>
+      </div>
+      <div id="recent-list" class="space-y-3">
+        <!-- JS Populated -->
+      </div>
+     </div>
+    </div>
+
+    <!-- Input Prestasi Page -->
+    <div id="page-input" class="page hidden p-4 lg:p-8 animate-fade-in">
+     <div class="mb-6">
+      <h2 id="form-title" class="text-2xl lg:text-3xl font-bold text-slate-800 mb-2">Input Prestasi Baru</h2>
+      <p class="text-slate-500">Kelola data prestasi siswa dalam sistem</p>
+     </div>
+
+     <!-- Mass Input Section (New) -->
+     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-6 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-4 opacity-10">
+            <svg class="w-32 h-32 text-blue-600" fill="currentColor" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </div>
+        <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            Input Massal (Import CSV)
+        </h3>
+        <p class="text-sm text-slate-500 mb-4 max-w-xl">Upload banyak data sekaligus menggunakan file CSV. Gunakan template yang disediakan agar format data sesuai.</p>
+        
+        <div class="flex flex-wrap gap-4 relative z-10">
+            <button onclick="downloadTemplate()" class="px-4 py-2 rounded-xl border-2 border-blue-100 text-blue-600 font-medium hover:bg-blue-50 transition-colors flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                Download Template CSV
+            </button>
+            
+            <label class="px-6 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 cursor-pointer shadow-lg shadow-blue-600/20">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                <span>Upload CSV</span>
+                <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="handleFileUpload(this)">
+            </label>
+        </div>
+     </div>
+
+     <div class="bg-white rounded-2xl p-6 lg:p-8 shadow-lg border border-slate-100 max-w-4xl mx-auto">
+      <form id="form-prestasi" class="space-y-6">
+       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div><label class="block text-sm font-medium text-slate-700 mb-2">Nama Siswa <span class="text-red-500">*</span></label> <input type="text" id="nama_siswa" required class="input-field w-full px-4 py-3 rounded-xl bg-slate-50 focus:bg-white outline-none" placeholder="Masukkan nama lengkap"></div>
+        <div><label class="block text-sm font-medium text-slate-700 mb-2">NIS / NISN <span class="text-red-500">*</span></label> <input type="text" id="nis" required class="input-field w-full px-4 py-3 rounded-xl bg-slate-50 focus:bg-white outline-none" placeholder="Masukkan NIS"></div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Kelas <span class="text-red-500">*</span></label>
+            <input type="text" id="kelas" required class="input-field w-full px-4 py-3 rounded-xl bg-slate-50 focus:bg-white outline-none" placeholder="Contoh: 7A, 8B, 9C">
+        </div>
+        <div><label class="block text-sm font-medium text-slate-700 mb-2">Jenis Prestasi <span class="text-red-500">*</span></label> <input type="text" id="jenis_prestasi" required class="input-field w-full px-4 py-3 rounded-xl bg-slate-50 focus:bg-white outline-none" placeholder="Contoh: Juara 1 Olimpiade Matematika"></div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Kategori <span class="text-red-500">*</span></label>
+            <select id="kategori" required class="input-field w-full px-4 py-3 rounded-xl bg-slate-50 focus:bg-white outline-none cursor-pointer">
+                <option value="">Pilih Kategori</option>
+                <option value="Akademik">📚 Akademik</option>
+                <option value="Olahraga">⚽ Olahraga</option>
+                <option value="Seni">🎨 Seni</option>
+                <option value="Non-Akademik">🏆 Non-Akademik</option>
+                <option value="Lainnya">📌 Lainnya</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Tingkat <span class="text-red-500">*</span></label>
+            <select id="tingkat" required class="input-field w-full px-4 py-3 rounded-xl bg-slate-50 focus:bg-white outline-none cursor-pointer">
+                <option value="">Pilih Tingkat</option>
+                <option value="Sekolah">🏫 Sekolah</option>
+                <option value="Kota">🏙️ Kota/Kabupaten</option>
+                <option value="Provinsi">🗺️ Provinsi</option>
+                <option value="Nasional">🇮🇩 Nasional</option>
+                <option value="Internasional">🌍 Internasional</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-2">Tahun <span class="text-red-500">*</span></label>
+            <input type="number" id="tahun" required class="input-field w-full px-4 py-3 rounded-xl bg-slate-50 focus:bg-white outline-none" placeholder="Contoh: 2024" min="2000" max="2100">
+        </div>
+       </div>
+       <div><label class="block text-sm font-medium text-slate-700 mb-2">Deskripsi</label> <textarea id="deskripsi" rows="3" class="input-field w-full px-4 py-3 rounded-xl bg-slate-50 focus:bg-white outline-none resize-none" placeholder="Keterangan tambahan..."></textarea></div>
+       <div class="flex flex-col sm:flex-row gap-4 pt-4 border-t border-slate-100">
+        <button type="submit" id="btn-submit" class="btn-primary flex-1 px-8 py-3 rounded-xl text-white font-medium flex items-center justify-center gap-2">
+         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg><span id="btn-submit-text">Simpan Data</span>
+        </button>
+        <button type="button" onclick="resetForm()" class="px-8 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors">Batal / Reset</button>
+       </div>
+      </form>
+     </div>
+    </div>
+
+    <!-- Daftar Prestasi Page -->
+    <div id="page-list" class="page hidden p-4 lg:p-8 animate-fade-in">
+     <div class="mb-6">
+      <h2 class="text-2xl lg:text-3xl font-bold text-slate-800 mb-2">Daftar Prestasi</h2>
+      <p class="text-slate-500">Database lengkap prestasi siswa.</p>
+     </div>
+     
+     <div class="bg-white rounded-2xl p-4 lg:p-6 shadow-sm border border-slate-100 mb-6">
+      <div class="flex flex-col lg:flex-row gap-4">
+       <div class="flex-1 relative">
+        <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        <input type="text" id="search-input" placeholder="Cari nama siswa atau prestasi..." class="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-yellow-500 outline-none transition-colors">
+       </div>
+       <div class="flex flex-wrap gap-3 items-center">
+        <select id="filter-kategori" class="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-yellow-500 outline-none bg-white cursor-pointer"><option value="">Semua Kategori</option><option value="Akademik">Akademik</option><option value="Olahraga">Olahraga</option><option value="Seni">Seni</option><option value="Non-Akademik">Non-Akademik</option><option value="Lainnya">Lainnya</option></select>
+        <select id="filter-tingkat" class="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-yellow-500 outline-none bg-white cursor-pointer"><option value="">Semua Tingkat</option><option value="Sekolah">Sekolah</option><option value="Kota">Kota</option><option value="Provinsi">Provinsi</option><option value="Nasional">Nasional</option><option value="Internasional">Internasional</option></select>
+        <button id="btn-export-excel" onclick="downloadData()" class="hidden px-4 py-3 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition-colors flex items-center gap-2 shadow-lg shadow-green-600/20" title="Download Excel">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            <span class="hidden sm:inline">Export Excel</span>
+        </button>
+       </div>
+      </div>
+     </div>
+
+     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="overflow-x-auto">
+       <table class="w-full">
+        <thead class="bg-gradient-to-r from-slate-50 to-slate-100">
+         <tr>
+          <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700 min-w-[180px]">Siswa</th>
+          <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700 hidden sm:table-cell whitespace-nowrap">NISN</th>
+          <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700 whitespace-nowrap">Kelas</th>
+          <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700 w-1/3 min-w-[250px]">Prestasi</th>
+          <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700 hidden md:table-cell whitespace-nowrap">Kategori</th>
+          <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700 hidden lg:table-cell whitespace-nowrap">Tingkat</th>
+          <th class="px-6 py-4 text-left text-sm font-semibold text-slate-700 hidden lg:table-cell whitespace-nowrap">Tahun</th>
+          <th class="px-6 py-4 text-center text-sm font-semibold text-slate-700 admin-only-col hidden whitespace-nowrap">Aksi</th>
+         </tr>
+        </thead>
+        <tbody id="table-body" class="divide-y divide-slate-100">
+         <!-- JS Populated -->
+        </tbody>
+       </table>
+      </div>
+      <!-- Pagination Controls (Replacing simple count) -->
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-2 text-sm text-slate-500">
+              <span>Tampilkan</span>
+              <select id="items-per-page" class="border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-500 bg-white">
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+              </select>
+              <span>data</span>
+          </div>
+          
+          <div class="text-sm text-slate-500" id="pagination-info">
+              Menampilkan 0 - 0 dari 0 data
+          </div>
+          
+          <div class="flex gap-1" id="pagination-controls">
+              <!-- Buttons injected by JS -->
+          </div>
+      </div>
+     </div>
+    </div>
+
+    <!-- Kategori Page -->
+    <div id="page-category" class="page hidden p-4 lg:p-8 animate-fade-in">
+     <div class="mb-6">
+      <h2 class="text-2xl lg:text-3xl font-bold text-slate-800 mb-2">Kategori</h2>
+      <p class="text-slate-500">Jenis prestasi yang terdaftar dalam sistem</p>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all group">
+       <div class="flex items-center gap-4 mb-4">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">📚</div>
+        <div><h3 class="font-bold text-slate-800">Akademik</h3><p class="text-sm text-slate-500">Olimpiade, Lomba Mapel</p></div>
+       </div>
+       <div class="flex justify-between items-center border-t pt-4 border-slate-100"><span class="text-sm text-slate-500 count-akademik">0 Data</span><span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Aktif</span></div>
+      </div>
+      
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all group">
+       <div class="flex items-center gap-4 mb-4">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">⚽</div>
+        <div><h3 class="font-bold text-slate-800">Olahraga</h3><p class="text-sm text-slate-500">Pertandingan, Atletik</p></div>
+       </div>
+       <div class="flex justify-between items-center border-t pt-4 border-slate-100"><span class="text-sm text-slate-500 count-olahraga">0 Data</span><span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Aktif</span></div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all group">
+       <div class="flex items-center gap-4 mb-4">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🎨</div>
+        <div><h3 class="font-bold text-slate-800">Seni</h3><p class="text-sm text-slate-500">Musik, Tari, Lukis</p></div>
+       </div>
+       <div class="flex justify-between items-center border-t pt-4 border-slate-100"><span class="text-sm text-slate-500 count-seni">0 Data</span><span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">Aktif</span></div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all group">
+       <div class="flex items-center gap-4 mb-4">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🏆</div>
+        <div><h3 class="font-bold text-slate-800">Non-Akademik</h3><p class="text-sm text-slate-500">Organisasi, Kepemimpinan</p></div>
+       </div>
+       <div class="flex justify-between items-center border-t pt-4 border-slate-100"><span class="text-sm text-slate-500 count-non-akademik">0 Data</span><span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">Aktif</span></div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all group">
+       <div class="flex items-center gap-4 mb-4">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">📌</div>
+        <div><h3 class="font-bold text-slate-800">Lainnya</h3><p class="text-sm text-slate-500">Penghargaan Umum</p></div>
+       </div>
+       <div class="flex justify-between items-center border-t pt-4 border-slate-100"><span class="text-sm text-slate-500 count-lainnya">0 Data</span><span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">Aktif</span></div>
+      </div>
+     </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-8 py-6 text-center text-sm text-slate-400 border-t border-slate-200/60 mx-8">
+      <p>&copy; 2026 Noviyalpg. Semua Hak Dilindungi.</p>
+    </footer>
+
+   </main>
+  </div>
+
+  <!-- Delete Modal -->
+  <div id="modal-delete" class="modal fixed inset-0 z-[60] flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm relative z-10 mx-4 shadow-2xl animate-fade-in">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </div>
+            <h3 class="font-bold text-xl text-slate-800">Hapus Data?</h3>
+            <p class="text-slate-500 mt-2">Data yang dihapus tidak dapat dikembalikan lagi.</p>
+        </div>
+        <div class="flex gap-3">
+            <button id="btn-cancel-delete" class="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200">Batal</button>
+            <button id="btn-confirm-delete" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 shadow-lg shadow-red-500/30">Ya, Hapus</button>
+        </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal (New) -->
+  <div id="modal-settings" class="modal fixed inset-0 z-[60] flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeSettingsModal()"></div>
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md relative z-10 mx-4 shadow-2xl animate-fade-in">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </div>
+            <div>
+                <h3 class="font-bold text-xl text-slate-800">Pengaturan Database</h3>
+                <p class="text-xs text-slate-500">Koneksi ke Google Sheets</p>
+            </div>
+        </div>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-slate-700 mb-2">Google Apps Script Web App URL</label>
+            <input type="text" id="gas-url-input" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none transition-colors text-sm" placeholder="https://script.google.com/macros/s/..." >
+            <p class="text-xs text-slate-400 mt-2">Biarkan kosong untuk menggunakan Penyimpanan Lokal (Offline).</p>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+            <button onclick="closeSettingsModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-medium">Batal</button>
+            <button onclick="saveSettings()" class="px-6 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 shadow-md">Simpan Pengaturan</button>
+        </div>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="modal-login" class="modal fixed inset-0 z-[60] flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeLoginModal()"></div>
+    <div class="bg-white rounded-2xl p-8 w-full max-w-sm relative z-10 mx-4 shadow-2xl animate-fade-in">
+        <div class="mb-6 text-center">
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </div>
+            <h3 class="font-bold text-xl text-slate-800">Login Admin</h3>
+            <p class="text-slate-500 text-sm mt-1">Masukkan password untuk mengelola data.</p>
+        </div>
+        <form onsubmit="handleLogin(event)">
+            <div class="mb-4">
+                <input type="password" id="login-password" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none transition-colors" placeholder="Password..." required>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeLoginModal()" class="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200">Batal</button>
+                <button type="submit" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 shadow-lg shadow-blue-500/30">Masuk</button>
+            </div>
+        </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <script>
+    // State Management
+    let achievements = [];
+    let deleteId = null;
+    let isAdmin = false; 
+    let editModeId = null;
+    
+    // Pagination State (Added back)
+    let currentPage = 1;
+    let itemsPerPage = 10;
+    
+    // Cloud Config - URL Permanen (Hardcoded)
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwoa6euIpGpXg1hp8z21fbUW-o2Nb310dPPXB6Yocr-EOMJFl0RJdszWVJEiuj7BYkH/exec";
+    
+    // Cek apakah ada settingan custom di localStorage. 
+    // Jika tidak ada (null), gunakan DEFAULT_GAS_URL.
+    // Jika user pernah mengosongkan manual (untuk offline), storedUrl akan string kosong "", maka tetap offline.
+    let storedUrl = localStorage.getItem('gas_url');
+    let GAS_URL = storedUrl !== null ? storedUrl : DEFAULT_GAS_URL;
+
+    // --- DOM Elements ---
+    const app = document.getElementById('app');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingText = document.getElementById('loading-text');
+    const form = document.getElementById('form-prestasi');
+    const tableBody = document.getElementById('table-body');
+    const recentList = document.getElementById('recent-list');
+    const searchInput = document.getElementById('search-input');
+    const filterKategori = document.getElementById('filter-kategori');
+    const filterTingkat = document.getElementById('filter-tingkat');
+    
+    // Pagination Elements
+    const itemsPerPageSelect = document.getElementById('items-per-page');
+    const paginationInfo = document.getElementById('pagination-info');
+    const paginationControls = document.getElementById('pagination-controls');
+    
+    // Modals
+    const modalDelete = document.getElementById('modal-delete');
+    const modalLogin = document.getElementById('modal-login');
+    const modalSettings = document.getElementById('modal-settings');
+    const dbStatusBar = document.getElementById('db-status-bar');
+
+    // Missing Buttons - Added these to fix ReferenceError
+    const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+    const btnCancelDelete = document.getElementById('btn-cancel-delete');
+
+    // Menu Elements
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileNav = document.getElementById('mobile-nav');
+    const closeMobileNav = document.getElementById('close-mobile-nav');
+    const mobileMenuContainer = document.querySelector('.mobile-menu-items');
+    
+    // --- Initialization ---
+    async function init() {
+        if (sessionStorage.getItem('isAdmin') === 'true') {
+            isAdmin = true;
+        }
+        
+        // Load initial Data
+        await fetchAllData();
+
+        updateAdminUI();
+        setupMobileMenu();
+    }
+
+    // --- Data Layer (Hybrid) ---
+    function setLoading(show, text = 'Memproses data...') {
+        loadingText.textContent = text;
+        if(show) loadingOverlay.classList.remove('hidden');
+        else loadingOverlay.classList.add('hidden');
+    }
+
+    // Helper: Save Locally Only
+    function saveDataLocal(data, isUpdate) {
+        if (isUpdate) {
+            // Use loose comparison (==) for ID to handle string vs number issues
+            const index = achievements.findIndex(x => x.id == data.id);
+            if (index !== -1) achievements[index] = data;
+        } else {
+            achievements.unshift(data);
+        }
+        saveLocalBackup(achievements);
+        
+        // Paksa reset ke halaman 1 agar data baru terlihat (jika create baru)
+        if (!isUpdate) currentPage = 1;
+        
+        renderDashboard();
+        renderTable();
+    }
+
+    // Helper: Delete Locally Only
+    function deleteDataLocal(id) {
+        achievements = achievements.filter(item => item.id != id);
+        saveLocalBackup(achievements);
+        renderDashboard();
+        renderTable();
+    }
+
+    async function fetchAllData() {
+        if (GAS_URL) {
+            // Cloud Mode
+            setLoading(true, 'Mengunduh data dari cloud...');
+            dbStatusBar.classList.remove('hidden');
+            try {
+                // Add timestamp to prevent caching
+                const response = await fetch(GAS_URL + '?action=read&t=' + new Date().getTime());
+                const result = await response.json();
+                if(result.status === 'success') {
+                    achievements = result.data.reverse(); // Newest first
+                    saveLocalBackup(achievements); // Cache
+                }
+            } catch (e) {
+                console.error("Fetch Error", e);
+                showToast('Gagal terhubung ke Cloud. Menggunakan data lokal.', 'error');
+                // Fallback to local backup if cloud fails
+                achievements = getLocalBackup();
+            } finally {
+                setLoading(false);
+                renderDashboard();
+                renderTable();
+            }
+        } else {
+            // Local Mode
+            dbStatusBar.classList.add('hidden');
+            achievements = getLocalBackup();
+            renderDashboard();
+            renderTable();
+        }
+    }
+
+    async function saveDataToBackend(data, isUpdate) {
+        if (GAS_URL) {
+            setLoading(true, 'Menyimpan ke Google Sheets...');
+            try {
+                const action = isUpdate ? 'update' : 'create';
+                
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ ...data, action: action })
+                });
+                
+                const result = await response.json();
+                if(result.status !== 'success') throw new Error(result.message);
+                
+                await fetchAllData(); // Refresh data from source
+                return true;
+            } catch (e) {
+                console.error(e);
+                setLoading(false);
+                
+                // --- FALLBACK LOGIC ---
+                // Jika gagal ke cloud, tawarkan simpan lokal
+                if(confirm(`Gagal menyimpan ke Cloud (${e.message}). \n\nApakah Anda ingin menyimpan data ini secara LOKAL (Offline) saja agar data tidak hilang?`)) {
+                    saveDataLocal(data, isUpdate);
+                    showToast('Data tersimpan secara Lokal (Offline Mode)', 'success');
+                    return true;
+                }
+                
+                return false;
+            }
+        } else {
+            // Local Logic - Langsung simpan
+            saveDataLocal(data, isUpdate);
+            return true;
+        }
+    }
+
+    async function deleteDataFromBackend(id) {
+        if (GAS_URL) {
+            setLoading(true, 'Menghapus data...');
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ id: id, action: 'delete' })
+                });
+                const result = await response.json();
+                if(result.status !== 'success') throw new Error(result.message);
+                await fetchAllData();
+                return true;
+            } catch(e) {
+                console.error(e);
+                setLoading(false);
+                
+                if(confirm(`Gagal menghapus di Cloud. Hapus data di Lokal saja?`)) {
+                    deleteDataLocal(id);
+                    return true;
+                }
+                return false;
+            }
+        } else {
+            deleteDataLocal(id);
+            return true;
+        }
+    }
+
+    function saveLocalBackup(data) {
+        localStorage.setItem('achievements', JSON.stringify(data));
+    }
+
+    function getLocalBackup() {
+        return JSON.parse(localStorage.getItem('achievements')) || [];
+    }
+
+    // --- CSV Import/Export Logic ---
+    
+    function downloadTemplate() {
+        const headers = ['Nama Siswa', 'NIS', 'Kelas', 'Jenis Prestasi', 'Kategori (Akademik/Olahraga/Seni/Non-Akademik/Lainnya)', 'Tingkat (Sekolah/Kota/Provinsi/Nasional/Internasional)', 'Tahun', 'Deskripsi'];
+        const sampleRow = ['Budi Santoso', '12345', '10-A', 'Juara 1 Lomba Lari', 'Olahraga', 'Kota', '2024', 'Lomba tingkat kota di stadion pahoman'];
+        
+        const csvContent = [
+            headers.join(','),
+            sampleRow.join(',')
+        ].join('\n');
+
+        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Template_Input_Prestasi.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    async function handleFileUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        // Reset input value so same file can be selected again if needed
+        const resetInput = () => { input.value = ''; };
+
+        if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+            showToast('Format file harus CSV', 'error');
+            resetInput();
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const text = e.target.result;
+            const rows = text.split('\n').map(row => row.trim()).filter(row => row.length > 0);
+            
+            if (rows.length < 2) {
+                showToast('File CSV kosong atau tidak valid', 'error');
+                resetInput();
+                return;
+            }
+
+            // Assuming standard format from Template:
+            // 0:Nama, 1:NIS, 2:Kelas, 3:Jenis, 4:Kategori, 5:Tingkat, 6:Tahun, 7:Deskripsi
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            setLoading(true, `Memproses ${rows.length - 1} data...`);
+
+            // Start from index 1 to skip header
+            const newItems = [];
+            for (let i = 1; i < rows.length; i++) {
+                // Using simple split if no complex quotes expected, else regex
+                // Let's use simple split for robustness with the template provided
+                const cols = rows[i].split(',').map(c => c.replace(/^"|"$/g, '').trim()); 
+                
+                if (cols.length < 4) { // Minimal valid columns
+                    failCount++;
+                    continue; 
+                }
+
+                const newItem = {
+                    id: Date.now() + i, // Unique ID gen
+                    nama: cols[0] || 'Tanpa Nama',
+                    nis: cols[1] || '-',
+                    kelas: cols[2] || '-',
+                    jenis: cols[3] || '-',
+                    kategori: cols[4] || 'Lainnya',
+                    tingkat: cols[5] || 'Sekolah',
+                    tahun: cols[6] || new Date().getFullYear().toString(),
+                    deskripsi: cols[7] || '',
+                    tanggal: new Date().toLocaleDateString('id-ID')
+                };
+                newItems.push(newItem);
+            }
+
+            // Save Data
+            if (GAS_URL) {
+                // Warning: Batch upload to GAS one-by-one is slow. 
+                // We will try to send them sequentially.
+                let processed = 0;
+                for (const item of newItems) {
+                    loadingText.textContent = `Mengupload ${processed + 1}/${newItems.length}...`;
+                    const success = await saveDataToBackend(item, false); // false = create new
+                    if(success) successCount++;
+                    else failCount++;
+                    processed++;
+                }
+            } else {
+                // Local save is instant
+                achievements.unshift(...newItems.reverse()); // Keep order
+                saveLocalBackup(achievements);
+                successCount = newItems.length;
+            }
+
+            setLoading(false);
+            resetInput();
+            
+            if (successCount > 0) {
+                showToast(`Berhasil mengimpor ${successCount} data!`, 'success');
+                renderDashboard();
+                renderTable();
+                navigateTo('list');
+            } else {
+                showToast('Gagal mengimpor data.', 'error');
+            }
+        };
+        
+        reader.readAsText(file);
+    }
+
+    function downloadData() {
+        if (achievements.length === 0) {
+            showToast('Tidak ada data untuk diunduh', 'error');
+            return;
+        }
+
+        // CSV Headers
+        const headers = ['No', 'Nama Siswa', 'NIS/NISN', 'Kelas', 'Jenis Prestasi', 'Kategori', 'Tingkat', 'Tahun', 'Deskripsi', 'Tanggal Input'];
+        
+        // Map data to rows
+        const rows = achievements.map((item, index) => [
+            index + 1,
+            `"${String(item.nama || '').replace(/"/g, '""')}"`,
+            `"${String(item.nis || '').replace(/"/g, '""')}"`,
+            `"${String(item.kelas || '').replace(/"/g, '""')}"`,
+            `"${String(item.jenis || '').replace(/"/g, '""')}"`,
+            `"${String(item.kategori || '').replace(/"/g, '""')}"`,
+            `"${String(item.tingkat || '').replace(/"/g, '""')}"`,
+            `"${String(item.tahun || '').replace(/"/g, '""')}"`,
+            `"${String(item.deskripsi || '').replace(/"/g, '""')}"`,
+            `"${String(item.tanggal || '').replace(/"/g, '""')}"`
+        ]);
+
+        // Construct CSV String
+        const csvContent = [
+            headers.join(','), 
+            ...rows.map(row => row.join(','))
+        ].join('\n');
+
+        // Create Blob with BOM for Excel UTF-8 support
+        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        // Trigger Download
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Data_Prestasi_Siswa_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast('Data berhasil diunduh (Excel/CSV)', 'success');
+    }
+
+    // --- Settings Logic ---
+    window.openSettingsModal = function() {
+        document.getElementById('gas-url-input').value = GAS_URL;
+        modalSettings.classList.add('active');
+    }
+
+    window.closeSettingsModal = function() {
+        modalSettings.classList.remove('active');
+    }
+
+    window.saveSettings = async function() {
+        const newUrl = document.getElementById('gas-url-input').value.trim();
+        GAS_URL = newUrl;
+        localStorage.setItem('gas_url', GAS_URL);
+        closeSettingsModal();
+        
+        if (GAS_URL) {
+            showToast('Konfigurasi Cloud disimpan. Menghubungkan...', 'success');
+            await fetchAllData();
+        } else {
+            showToast('Beralih ke Mode Offline (Lokal)', 'success');
+            dbStatusBar.classList.add('hidden');
+            fetchAllData();
+        }
+    }
+
+    // --- Admin / Auth Logic ---
+    function handleProfileClick() {
+        if (isAdmin) {
+            isAdmin = false;
+            sessionStorage.removeItem('isAdmin');
+            updateAdminUI();
+            showToast('Berhasil keluar dari mode Admin', 'success');
+            if(!document.getElementById('page-input').classList.contains('hidden')) {
+                navigateTo('dashboard');
+            }
+        } else {
+            modalLogin.classList.add('active');
+            setTimeout(() => document.getElementById('login-password').focus(), 100);
+        }
+    }
+
+    function closeLoginModal() {
+        modalLogin.classList.remove('active');
+        document.getElementById('login-password').value = '';
+        document.getElementById('login-password').classList.remove('border-red-500');
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        const password = document.getElementById('login-password').value;
+        
+        if (password === 'rahasia') {
+            isAdmin = true;
+            sessionStorage.setItem('isAdmin', 'true');
+            updateAdminUI();
+            closeLoginModal();
+            showToast('Login Berhasil! Mode Admin Aktif', 'success');
+        } else {
+            showToast('Password Salah!', 'error');
+            const passInput = document.getElementById('login-password');
+            passInput.classList.add('border-red-500');
+            passInput.classList.add('animate-pulse');
+            setTimeout(() => {
+                passInput.classList.remove('border-red-500');
+                passInput.classList.remove('animate-pulse');
+            }, 2000);
+        }
+    }
+
+    function updateAdminUI() {
+        const profileName = document.getElementById('profile-name');
+        const profileRole = document.getElementById('profile-role');
+        const profileAvatar = document.getElementById('profile-avatar');
+        const adminMenuGroup = document.getElementById('admin-menu-group');
+        const btnExportExcel = document.getElementById('btn-export-excel'); // New
+
+        if (isAdmin) {
+            profileName.textContent = 'Administrator';
+            profileRole.textContent = 'Admin Mode Aktif';
+            profileAvatar.className = 'w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg border border-blue-400';
+            profileAvatar.innerHTML = 'A';
+            adminMenuGroup.classList.remove('hidden');
+            if(btnExportExcel) btnExportExcel.classList.remove('hidden'); // Show export button
+        } else {
+            profileName.textContent = 'Tamu (Guest)';
+            profileRole.textContent = 'Klik untuk Mode Admin';
+            profileAvatar.className = 'w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold shadow-lg border border-slate-500';
+            profileAvatar.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>';
+            adminMenuGroup.classList.add('hidden');
+            if(btnExportExcel) btnExportExcel.classList.add('hidden'); // Hide export button
+        }
+
+        renderTable(); 
+        setupMobileMenu();
+    }
+
+    function setupMobileMenu() {
+        const desktopLinks = document.querySelectorAll('#desktop-nav button');
+        mobileMenuContainer.innerHTML = '';
+        desktopLinks.forEach(link => {
+            if (link.offsetParent !== null) { 
+                const clone = link.cloneNode(true);
+                clone.className = 'nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white hover:bg-slate-800 mb-1';
+                if (link.hasAttribute('onclick')) {
+                    const originalOnClick = link.getAttribute('onclick');
+                     clone.setAttribute('onclick', `${originalOnClick}; toggleMobileMenu(false);`);
+                }
+                
+                if(clone.classList.contains('active')) {
+                     clone.classList.remove('text-slate-300');
+                     clone.classList.add('text-white', 'bg-slate-800');
+                }
+                mobileMenuContainer.appendChild(clone);
+            }
+        });
+        
+        const profileLink = document.createElement('button');
+        profileLink.className = 'nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-slate-300 hover:text-white mt-4 border-t border-slate-700 pt-4';
+        profileLink.innerHTML = isAdmin 
+            ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg> <span class="font-medium">Keluar Admin (Jadi Tamu)</span>'
+            : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg> <span class="font-medium">Masuk sebagai Admin</span>';
+        
+        profileLink.onclick = () => {
+            toggleMobileMenu(false);
+            handleProfileClick();
+        };
+        mobileMenuContainer.appendChild(profileLink);
+    }
+
+    // --- Navigation ---
+    window.navigateTo = function(pageId) {
+        document.querySelectorAll('.page').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`page-${pageId}`).classList.remove('hidden');
+        
+        document.querySelectorAll('#desktop-nav .nav-item').forEach(btn => {
+            if(btn.getAttribute('data-target') === pageId) {
+                btn.classList.add('active');
+                btn.classList.remove('text-slate-300');
+            } else {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-300');
+            }
+        });
+        
+        setupMobileMenu();
+        
+        if(pageId === 'dashboard') renderDashboard();
+        if(pageId === 'list') renderTable();
+        if(pageId === 'category') updateCategoryCounts();
+    }
+
+    // --- CRUD Operations ---
+    window.editData = function(id) {
+        // Handle ID type mismatch (string vs number)
+        const item = achievements.find(x => x.id == id); 
+        if(!item) return;
+
+        editModeId = item.id;
+        
+        document.getElementById('nama_siswa').value = item.nama;
+        document.getElementById('nis').value = item.nis;
+        document.getElementById('kelas').value = item.kelas;
+        document.getElementById('jenis_prestasi').value = item.jenis;
+        document.getElementById('kategori').value = item.kategori;
+        document.getElementById('tingkat').value = item.tingkat;
+        document.getElementById('tahun').value = item.tahun;
+        document.getElementById('deskripsi').value = item.deskripsi;
+
+        document.getElementById('form-title').textContent = 'Edit Data Prestasi';
+        document.getElementById('btn-submit-text').textContent = 'Update Data';
+        
+        navigateTo('input');
+    }
+
+    window.resetForm = function() {
+        form.reset();
+        editModeId = null;
+        document.getElementById('form-title').textContent = 'Input Prestasi Baru';
+        document.getElementById('btn-submit-text').textContent = 'Simpan Data';
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            id: editModeId ? editModeId : Date.now(), // Generate ID if new
+            nama: document.getElementById('nama_siswa').value,
+            nis: document.getElementById('nis').value,
+            kelas: document.getElementById('kelas').value,
+            jenis: document.getElementById('jenis_prestasi').value,
+            kategori: document.getElementById('kategori').value,
+            tingkat: document.getElementById('tingkat').value,
+            tahun: document.getElementById('tahun').value,
+            deskripsi: document.getElementById('deskripsi').value,
+            tanggal: new Date().toLocaleDateString('id-ID')
+        };
+
+        const success = await saveDataToBackend(formData, !!editModeId);
+
+        if(success) {
+            showToast(editModeId ? 'Data berhasil diperbarui!' : 'Data prestasi disimpan!', 'success');
+            resetForm();
+            navigateTo('list');
+        }
+    });
+
+    // --- Rendering Functions (Dashboard, Table) ---
+    function renderDashboard() {
+        document.getElementById('stat-total').textContent = achievements.length;
+        document.getElementById('stat-akademik').textContent = achievements.filter(x => x.kategori === 'Akademik').length;
+        document.getElementById('stat-olahraga').textContent = achievements.filter(x => x.kategori === 'Olahraga').length;
+        document.getElementById('stat-seni').textContent = achievements.filter(x => x.kategori === 'Seni').length;
+
+        const counts = { 'Akademik': 0, 'Olahraga': 0, 'Seni': 0, 'Non-Akademik': 0, 'Lainnya': 0 };
+        achievements.forEach(a => {
+            if (counts[a.kategori] !== undefined) counts[a.kategori]++;
+            else counts['Lainnya']++;
+        });
+
+        document.getElementById('cat-akademik-card').textContent = counts['Akademik'];
+        document.getElementById('cat-olahraga-card').textContent = counts['Olahraga'];
+        document.getElementById('cat-seni-card').textContent = counts['Seni'];
+        document.getElementById('cat-lainnya-card').textContent = counts['Lainnya'] + counts['Non-Akademik'];
+
+        // Chart
+        const levels = ['Sekolah', 'Kota', 'Provinsi', 'Nasional', 'Internasional'];
+        const levelCounts = levels.map(l => achievements.filter(a => a.tingkat && a.tingkat.includes(l)).length);
+        const maxLevel = Math.max(...levelCounts, 1);
+        
+        const chartContainer = document.getElementById('chart-level');
+        chartContainer.innerHTML = '';
+        
+        levels.forEach((lvl, idx) => {
+            const count = levelCounts[idx];
+            const percent = (count / maxLevel) * 100;
+            const colors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-purple-500'];
+            
+            chartContainer.innerHTML += `
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-slate-600 w-24">${lvl}</span>
+                    <div class="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                        <div class="chart-bar h-full ${colors[idx]} rounded-full relative group" style="width: 0%" data-width="${percent}%">
+                            <div class="absolute right-0 top-[-25px] bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">${count}</div>
+                        </div>
+                    </div>
+                    <span class="text-sm font-bold text-slate-700 w-6 text-right">${count}</span>
+                </div>
+            `;
+        });
+        
+        setTimeout(() => {
+            document.querySelectorAll('.chart-bar').forEach(bar => {
+                bar.style.width = bar.getAttribute('data-width');
+            });
+        }, 100);
+
+        // Recent List
+        recentList.innerHTML = '';
+        if(achievements.length === 0) {
+            recentList.innerHTML = `<div class="text-center py-6 text-slate-400 text-sm">Belum ada data prestasi.</div>`;
+        } else {
+            achievements.slice(0, 5).forEach(item => {
+                recentList.innerHTML += `
+                <div class="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
+                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm">
+                        ${String(item.nama || '?').charAt(0)}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-slate-800 truncate">${item.jenis}</p>
+                        <p class="text-xs text-slate-500 truncate">${item.nama} • ${item.tingkat}</p>
+                    </div>
+                    <span class="text-xs font-medium px-2 py-1 bg-slate-100 text-slate-600 rounded-lg">${item.kategori}</span>
+                </div>`;
+            });
+        }
+    }
+
+    function renderTable() {
+        const term = searchInput.value.toLowerCase();
+        const cat = filterKategori.value;
+        const lvl = filterTingkat.value;
+
+        const actionHeader = document.querySelector('.admin-only-col');
+        if (isAdmin) actionHeader.classList.remove('hidden');
+        else actionHeader.classList.add('hidden');
+
+        // Filter Data First
+        const filtered = achievements.filter(item => {
+            const iNama = String(item.nama || '').toLowerCase();
+            const iJenis = String(item.jenis || '').toLowerCase();
+            const iTingkat = String(item.tingkat || '');
+            
+            const matchSearch = iNama.includes(term) || iJenis.includes(term);
+            const matchCat = cat === '' || item.kategori === cat;
+            const matchLvl = lvl === '' || iTingkat.includes(lvl);
+            return matchSearch && matchCat && matchLvl;
+        });
+
+        // Pagination Calculations
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        
+        // Ensure currentPage is valid
+        if (currentPage > totalPages) currentPage = totalPages || 1;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedData = filtered.slice(startIndex, endIndex);
+
+        tableBody.innerHTML = '';
+        
+        // Render Empty State
+        if (totalItems === 0) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400">Tidak ada data yang ditemukan</td></tr>`;
+            renderPaginationControls(0, 0);
+            return;
+        }
+
+        // Render Paginated Data
+        paginatedData.forEach(item => {
+            let badgeClass = 'bg-gray-100 text-gray-700';
+            if(item.kategori === 'Akademik') badgeClass = 'bg-blue-100 text-blue-700';
+            if(item.kategori === 'Olahraga') badgeClass = 'bg-green-100 text-green-700';
+            if(item.kategori === 'Seni') badgeClass = 'bg-purple-100 text-purple-700';
+            if(item.kategori === 'Non-Akademik') badgeClass = 'bg-orange-100 text-orange-700';
+
+            const adminActions = isAdmin ? `
+                <td class="px-6 py-4 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                        <button onclick="editData('${item.id}')" class="p-2 text-slate-400 hover:text-blue-500 transition-colors rounded-lg hover:bg-blue-50" title="Edit Data">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button onclick="confirmDelete('${item.id}')" class="p-2 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50" title="Hapus Data">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </div>
+                </td>
+            ` : '';
+
+            tableBody.innerHTML += `
+                <tr class="table-row border-b border-slate-50 last:border-0 hover:bg-slate-50">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-600 flex-shrink-0">${String(item.nama || '?').charAt(0)}</div>
+                            <p class="font-medium text-slate-800 text-sm line-clamp-2">${item.nama}</p>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 hidden sm:table-cell whitespace-nowrap">
+                        <span class="text-sm text-slate-600 font-mono">${item.nis}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                            ${item.kelas}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-sm font-semibold text-slate-800">${item.jenis}</span>
+                            <span class="text-xs text-slate-500 line-clamp-2 leading-relaxed">${item.deskripsi || '-'}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 hidden md:table-cell whitespace-nowrap">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeClass.replace('bg-', 'bg-opacity-20 border-')}">${item.kategori}</span>
+                    </td>
+                    <td class="px-6 py-4 hidden lg:table-cell whitespace-nowrap">
+                        <span class="text-sm text-slate-600 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                            ${item.tingkat}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 hidden lg:table-cell text-sm text-slate-500 font-mono whitespace-nowrap">${item.tahun}</td>
+                    ${adminActions}
+                </tr>
+            `;
+        });
+
+        renderPaginationControls(totalItems, filtered.length);
+    }
+
+    function renderPaginationControls(totalItems, filteredLength) {
+        if(totalItems === 0) {
+            paginationInfo.textContent = 'Menampilkan 0 data';
+            paginationControls.innerHTML = '';
+            return;
+        }
+
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const start = (currentPage - 1) * itemsPerPage + 1;
+        const end = Math.min(start + itemsPerPage - 1, totalItems);
+
+        paginationInfo.textContent = `Menampilkan ${start} - ${end} dari ${totalItems} data`;
+
+        let buttons = '';
+        
+        // Prev Button
+        buttons += `<button onclick="changePage(${currentPage - 1})" class="px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-50" ${currentPage === 1 ? 'disabled' : ''}>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        </button>`;
+
+        // Number Buttons (Simple logic: Show all if <=7 pages, else Show Prev, Curr, Next)
+        // For simplicity in this iteration, we show max 5 pages around current page
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                const activeClass = i === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50';
+                buttons += `<button onclick="changePage(${i})" class="px-3 py-1 text-sm font-medium rounded border ${activeClass}">${i}</button>`;
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                buttons += `<span class="px-2 py-1 text-slate-400">...</span>`;
+            }
+        }
+
+        // Next Button
+        buttons += `<button onclick="changePage(${currentPage + 1})" class="px-2 py-1 rounded border border-slate-200 hover:bg-slate-50 disabled:opacity-50" ${currentPage === totalPages ? 'disabled' : ''}>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+        </button>`;
+
+        paginationControls.innerHTML = buttons;
+    }
+
+    window.changePage = function(newPage) {
+        if(newPage < 1) return;
+        // Total pages check is implicitly handled by render logic as it won't render buttons > totalPages
+        currentPage = newPage;
+        renderTable();
+    }
+
+    function updateCategoryCounts() {
+        const counts = { 'Akademik': 0, 'Olahraga': 0, 'Seni': 0, 'Non-Akademik': 0, 'Lainnya': 0 };
+        achievements.forEach(a => {
+            if (counts[a.kategori] !== undefined) counts[a.kategori]++;
+            else counts['Lainnya']++;
+        });
+        
+        document.querySelector('.count-akademik').textContent = counts['Akademik'] + ' Data';
+        document.querySelector('.count-olahraga').textContent = counts['Olahraga'] + ' Data';
+        document.querySelector('.count-seni').textContent = counts['Seni'] + ' Data';
+        document.querySelector('.count-non-akademik').textContent = counts['Non-Akademik'] + ' Data';
+        document.querySelector('.count-lainnya').textContent = counts['Lainnya'] + ' Data';
+    }
+
+    // --- Events & Helpers ---
+    // Reset to page 1 when filtering
+    const resetPagingAndRender = () => {
+        currentPage = 1;
+        renderTable();
+    };
+
+    searchInput.addEventListener('input', resetPagingAndRender);
+    filterKategori.addEventListener('change', resetPagingAndRender);
+    filterTingkat.addEventListener('change', resetPagingAndRender);
+    
+    // Pagination Event Listener
+    itemsPerPageSelect.addEventListener('change', (e) => {
+        itemsPerPage = parseInt(e.target.value);
+        resetPagingAndRender();
+    });
+
+    window.confirmDelete = function(id) {
+        deleteId = id;
+        modalDelete.classList.add('active');
+    }
+
+    btnCancelDelete.addEventListener('click', () => {
+        modalDelete.classList.remove('active');
+        deleteId = null;
+    });
+
+    btnConfirmDelete.addEventListener('click', async () => {
+        if(deleteId) {
+            const success = await deleteDataFromBackend(deleteId);
+            if(success) {
+                showToast('Data berhasil dihapus', 'success');
+            }
+            modalDelete.classList.remove('active');
+            deleteId = null;
+        }
+    });
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast px-6 py-3 rounded-xl shadow-lg font-medium text-white flex items-center gap-2 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+        toast.innerHTML = `
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${type === 'success' ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'}" /></svg>
+            ${message}
+        `;
+        document.getElementById('toast-container').appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    mobileMenuBtn.addEventListener('click', () => toggleMobileMenu(true));
+    document.getElementById('mobile-nav-overlay').addEventListener('click', () => toggleMobileMenu(false));
+    closeMobileNav.addEventListener('click', () => toggleMobileMenu(false));
+
+    function toggleMobileMenu(show) {
+        if(show) {
+            mobileNav.classList.remove('hidden');
+        } else {
+            mobileNav.classList.add('hidden');
+        }
+    }
+
+    // --- Full Screen Logic ---
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                showToast(`Error: ${err.message}`, 'error');
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+
+    // Listen for fullscreen changes to update UI (Icons/Text)
+    document.addEventListener('fullscreenchange', () => {
+        const isFull = !!document.fullscreenElement;
+        const icons = document.querySelectorAll('.fullscreen-btn-icon');
+        const texts = document.querySelectorAll('.fullscreen-btn-text');
+        
+        // Icons
+        const expandPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />';
+        const compressPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H4v6m6-6l-7 7m17-7v6h-6m6-6l7 7M14 10V4h-6m6 6L7 3m7 7h6V4m-6 6l7-7" />'; // Arrows pointing in
+        
+        icons.forEach(icon => icon.innerHTML = isFull ? compressPath : expandPath);
+        texts.forEach(text => text.textContent = isFull ? "Keluar Penuh" : "Layar Penuh");
+    });
+
+    // Start App
+    init();
+
+  </script>
+ </body>
+</html>
